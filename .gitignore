@@ -1,0 +1,29 @@
+# Environment files
+.env
+
+# Docker volumes
+*.log
+*.pid
+*.sqlite3
+/postgres_data/
+/flask_db_data/
+/pgadmin_data/
+/mysql_data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+
+# Node.js (React)
+node_modules/
+build/
+
+# System and IDE files
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
