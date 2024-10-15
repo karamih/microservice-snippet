@@ -5,12 +5,14 @@ services:
     build:
       context: ./django
     command: python manage.py runserver 0.0.0.0:8000
+    working_dir: /app
     ports:
       - "8000:8000"
     volumes:
       - ./django:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DEBUG=${DEBUG}
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
@@ -19,6 +21,7 @@ services:
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
       - DATABASE_HOST=${DATABASE_HOST}
       - DATABASE_PORT=${DATABASE_PORT}
+      - MESSAGE_BROKER_URL=${RABBITMQ_CLOUD_URL}
 
   db:
     image: mysql:lts
@@ -38,5 +41,62 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
 
+
+  flask:
+    build:
+      context: ./flask
+    command: python app.py
+    working_dir: /app
+    ports:
+      - "8001:5000"
+    volumes:
+      - ./flask:/app
+    depends_on:
+      flask_db:
+        condition: service_healthy
+    environment:
+      - DEBUG=${FLASK_DEBUG}
+      - DATABASE_NAME=${FLASK_DATABASE_NAME}
+      - DATABASE_USER=${FLASK_DATABASE_USER}
+      - DATABASE_PASSWORD=${FLASK_DATABASE_PASSWORD}
+      - DATABASE_HOST=${FLASK_DATABASE_HOST}
+      - DATABASE_PORT=${FLASK_DATABASE_PORT}
+      - MESSAGE_BROKER_URL=${RABBITMQ_CLOUD_URL}
+
+  flask_db:
+    image: mysql:lts
+    restart: always
+    volumes:
+      - flask_mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      MYSQL_DATABASE: ${FLASK_MYSQL_DATABASE}
+      MYSQL_USER: ${FLASK_MYSQL_USER}
+      MYSQL_PASSWORD: ${FLASK_MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${FLASK_MYSQL_ROOT_PASSWORD}
+
+
+  queue:
+    build:
+      context: ./flask
+    command: python consumer.py
+    depends_on:
+      flask_db:
+        condition: service_healthy
+    environment:
+      - DATABASE_NAME=${FLASK_DATABASE_NAME}
+      - DATABASE_USER=${FLASK_DATABASE_USER}
+      - DATABASE_PASSWORD=${FLASK_DATABASE_PASSWORD}
+      - DATABASE_HOST=${FLASK_DATABASE_HOST}
+      - DATABASE_PORT=${FLASK_DATABASE_PORT}
+      - MESSAGE_BROKER_URL=${RABBITMQ_CLOUD_URL}
+
 volumes:
   mysql_data:
+  flask_mysql_data:
