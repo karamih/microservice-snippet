@@ -82,7 +82,23 @@ services:
       MYSQL_ROOT_PASSWORD: ${FLASK_MYSQL_ROOT_PASSWORD}
 
 
-  queue:
+  django_queue:
+    build:
+      context: ./django
+    command: python consumer.py
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - MESSAGE_BROKER_URL=${RABBITMQ_CLOUD_URL}
+
+
+  flask_queue:
     build:
       context: ./flask
     command: python consumer.py

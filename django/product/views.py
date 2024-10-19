@@ -1,10 +1,13 @@
+import random
+
 from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .serializers import ProductSerializer
-from .models import ProductModels
+from .models import ProductModels, UserModel
 from .producer import publish
 
 
@@ -39,3 +42,12 @@ class ProductViewSets(viewsets.ViewSet):
         product.delete()
         publish('product_deleted', pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserApiView(APIView):
+    def get(self, _):
+        users = UserModel.objects.all()
+        user = random.choice(users)
+        return Response({
+            'id': user.id
+        })

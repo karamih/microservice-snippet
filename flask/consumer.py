@@ -9,11 +9,11 @@ try:
     connection = pika.BlockingConnection(parameters=params)
     channel = connection.channel()
 
-    channel.queue_declare('test', durable=True)
+    channel.queue_declare('main')
 
 
     def callback(ch, method, properties, body):
-        print('data received...')
+        print('data received in main...')
         data = json.loads(body)
         print(data)
 
@@ -35,9 +35,9 @@ try:
                 db.session.commit()
 
 
-    channel.basic_consume(queue='test', on_message_callback=callback, auto_ack=True)
+    channel.basic_consume(queue='main', on_message_callback=callback, auto_ack=True)
 
-    print('start consuming...')
+    print('start consuming in main...')
 
     channel.start_consuming()
 
